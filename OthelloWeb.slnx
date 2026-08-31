@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="OthelloWeb.Client/OthelloWeb.Client.csproj" />
+  <Project Path="OthelloWeb.Server/OthelloWeb.Server.csproj" />
+  <Project Path="OthelloWeb.Shared.Tests/OthelloWeb.Shared.Tests.csproj" />
+  <Project Path="OthelloWeb.Shared/OthelloWeb.Shared.csproj" />
+</Solution>
