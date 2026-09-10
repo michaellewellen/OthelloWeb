@@ -1,0 +1,78 @@
+﻿@page "/lobby"
+@using Microsoft.AspNetCore.SignalR.Client
+@using OthelloWeb.Shared.Types
+@implements IAsyncDisposable /// clean up the hub connection when the component is disposed
+
+<h3>Lobby</h3>
+<p>Your connection id: @connectionId</p>
+
+<h4>Connected clients:</h4>
+<ul>
+    @foreach (var id in connectedClients)
+    {
+        <li>@id</li>
+    }
+</ul>
+<h4>Tables:</h4>
+@foreach (var table in tables)
+{
+    <div>
+        Table @table.Number -
+        Seat 1: @(table.Seat1ConnectionId is null ? "(Empty)" : table.Seat1ConnectionId.Substring(0,7))
+        | Seat 2: @(table.Seat2ConnectionId is null ? "(Empty)" : table.Seat2ConnectionId.Substring(0, 7))
+    </div>
+    
+}
+<button @onclick="() => JoinTableOne()">Join Table 1 (test)</button>
+
+
+
+@code {
+    private HubConnection? hubConnection;
+    private string? connectionId;
+    private List<string> connectedClients = new();
+    private List<Table> tables = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        hubConnection = new HubConnectionBuilder()
+            .WithUrl("https://localhost:7023/lobbyhub")
+            .Build();
+
+        hubConnection.On<List<string>>("UpdateClientList", (updatedList) =>
+        {
+            Console.WriteLine($"Client list update received: {updatedList.Count}");
+            connectedClients = updatedList;
+            InvokeAsync(StateHasChanged);
+        });
+
+        hubConnection.On<List<Table>>("UpdateTableList", (updatedTables) =>
+        {
+            Console.WriteLine($"Table list update received: {updatedTables.Count}");
+            tables = updatedTables;
+            InvokeAsync(StateHasChanged);
+        });
+
+        await hubConnection.StartAsync();
+        Console.WriteLine($"Connection state: {hubConnection.State}");
+        connectionId = hubConnection.ConnectionId;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+
+    private async Task JoinTableOne()
+    {
+        if (hubConnection is not null)
+        {
+            Console.WriteLine("Getting ready to join table 1");
+            await hubConnection.InvokeAsync("JoinTable", 1);
+            Console.WriteLine("Joined table 1");
+        }
+    }
+}
